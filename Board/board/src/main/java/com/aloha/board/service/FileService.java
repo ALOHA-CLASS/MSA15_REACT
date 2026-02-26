@@ -27,9 +27,9 @@ public interface FileService extends BaseService<Files> {
   public int deleteFilesById(String idList);
   
   // 선택 삭제(List) - no
-  public int deleteFiles(List<Long> noList);
+  public int deleteFileList(List<Long> noList);
   // 선택 삭제(List) - id
-  public int deleteFilesById(List<String> idList);
+  public int deleteFileListById(List<String> idList);
 
   // 타입별 파일 조회
   public Files selectByType(Files file);

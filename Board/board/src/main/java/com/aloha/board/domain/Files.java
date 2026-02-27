@@ -13,8 +13,7 @@ import lombok.Data;
 public class Files {
   private Long no;
   private String id;
-  private String pTable;
-  private Long pNo;
+  private String pId;
   private String fileName;
   private String originName;
   private String filePath;

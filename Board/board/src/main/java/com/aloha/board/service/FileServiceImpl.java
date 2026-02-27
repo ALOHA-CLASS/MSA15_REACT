@@ -7,9 +7,12 @@ import java.util.List;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.ResourceLoader;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.util.FileCopyUtils;
+import org.springframework.util.MimeTypeUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.aloha.board.domain.Files;
@@ -28,9 +31,12 @@ import lombok.extern.slf4j.Slf4j;
 public class FileServiceImpl implements FileService {
 
   private final FileMapper fileMapper;
+  private final ResourceLoader resourceLoader;  // 자원을 가져오는 객체
 
   @Value("${upload.path")
   private String uploadPath;   // 업로드 경로
+
+
 
   @Override
   public List<Files> list() {
@@ -46,7 +52,7 @@ public class FileServiceImpl implements FileService {
   }
 
   @Override
-  public Files select(int no) {
+  public Files select(Long no) {
     return fileMapper.select(no);
   }
 
@@ -98,7 +104,7 @@ public class FileServiceImpl implements FileService {
   }
 
   @Override
-  public boolean delete(int no) {
+  public boolean delete(Long no) {
     Files file = fileMapper.select(no);     // 파일정보 조회
     delete(file);                           // 1️⃣ 파일 삭제
     int result = fileMapper.delete(no);     // 2️⃣ DB 데이터 삭제 
@@ -213,7 +219,7 @@ public class FileServiceImpl implements FileService {
     int count = 0;
     String[] nos = noList.split(",");
     for (String noStr : nos) {
-      int no = Integer.parseInt(noStr);
+      Long no = Long.parseLong(noStr);
       count += ( delete(no) ? 1 : 0 );
     }
     log.info("파일 " + count + "개를 삭제 하였습니다.");
@@ -238,7 +244,7 @@ public class FileServiceImpl implements FileService {
     if( noList == null || noList.isEmpty() ) return 0;
 
     for (Long no : noList) {
-      Files file = select(no.intValue());
+      Files file = select(no.longValue());
       delete(file);
     }
 
@@ -269,6 +275,42 @@ public class FileServiceImpl implements FileService {
   @Override
   public List<Files> listByType(Files file) {
     return fileMapper.listByType(file);
+  }
+
+  @Override
+  public boolean thumbnail(String id, HttpServletResponse response) throws Exception {
+    Files file = selectById(id);
+    String filePath = file != null ? file.getFilePath() : null;
+
+    File imgFile;
+    // 파일 경로가 null 또는 파일이 존재하지 않는 경우 ➡ no-image
+    // org.springframework.core.io.Resource
+    Resource resource = resourceLoader.getResource("classpath:static/img/no-image.png");
+    if( filePath == null || !(imgFile = new File(filePath)).exists() ) {
+      // no-image.png (기본 이미지) 적용
+      imgFile = resource.getFile();
+      filePath = imgFile.getPath();
+    }
+
+    // 확장자 
+    // C:/upload/2026.02.06-강아지.png
+    String ext = filePath.substring(filePath.lastIndexOf(".") + 1);
+    String mimeType = MimeTypeUtils.parseMimeType("image/" + ext).toString();
+    MediaType mType = MediaType.valueOf(mimeType);
+
+    if( mType == null ) {
+      // 이미지 타입이 아닌 경우
+      response.setContentType(MediaType.IMAGE_PNG_VALUE);
+      imgFile = resource.getFile();
+    } else {
+      // 이미지 타입
+      response.setContentType(mType.toString());
+    }
+
+    FileInputStream fis = new FileInputStream(imgFile);     // 파일 입력
+    ServletOutputStream sos = response.getOutputStream();   // 파일 출력
+    int result = FileCopyUtils.copy(fis, sos);              // 파일 전송
+    return result > 0;
   }
 
   

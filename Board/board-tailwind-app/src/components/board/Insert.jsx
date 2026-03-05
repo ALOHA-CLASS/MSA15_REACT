@@ -7,6 +7,7 @@ import { useBoardMutations } from '../../hooks/useBoardMutations'
 import { useForm } from 'react-hook-form'
 import { filesApi } from '../../apis/files'
 
+
 // CkEditor 이미지 업로드 플러그인
 function uploadAdapterPlugin(editor) {
   editor.plugins.get('FileRepository').createUploadAdapter = (loader) => ({
@@ -242,6 +243,7 @@ const Insert = () => {
           type='button'
           className='px-4 py-2 w-full text-sm font-medium text-gray-700 bg-white border border-gray-200
             rounded-lg hover:bg-gray-50 transition-colors cursor-pointer'
+          onClick={() => navigate('/boards')}
           >
             취소
         </button>
